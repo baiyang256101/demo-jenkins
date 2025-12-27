@@ -24,16 +24,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo '🔍 Checking out code...'
+                echo 'Checking out code...'
+                // 请确保在此处填写正确的 git 仓库地址和凭据ID
                 git branch: 'main',
-                    url: 'https://github.com/geekhall/demo.git',
-                    credentialsId: 'Github-token'
+                    url: 'https://github.com/baiyang256101/demo-jenkins.git',
+                    credentialsId: 'github-token'
 
                 script {
+                    // 获取最近一次提交的信息
                     env.GIT_COMMIT_MSG = sh(
                         script: 'git log -1 --pretty=%B',
                         returnStdout: true
                     ).trim()
+                    // 获取提交者名称
                     env.GIT_COMMIT_AUTHOR = sh(
                         script: 'git log -1 --pretty=%an',
                         returnStdout: true
@@ -45,7 +48,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo '🔨 Building application...'
+                echo 'Building application...'
+                // 使用 Maven Wrapper 进行构建，跳过测试
                 sh '''
                     chmod +x mvnw
                     ./mvnw clean package -DskipTests
@@ -53,47 +57,50 @@ pipeline {
             }
             post {
                 success {
-                    echo '✅ Build completed successfully!'
+                    echo 'Build completed successfully!'
+                    // 归档构建产物 jar 包
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
                 failure {
-                    echo '❌ Build failed!'
+                    echo 'Build failed!'
                 }
             }
         }
 
         stage('Test') {
             steps {
-                echo '🧪 Running tests...'
+                echo 'Running tests...'
+                // 运行单元测试
                 sh './mvnw test'
             }
             post {
                 always {
-                    // 发布测试报告
+                    // 无论成功失败都收集测试报告
                     junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                 }
                 success {
-                    echo '✅ All tests passed!'
+                    echo 'All tests passed!'
                 }
                 failure {
-                    echo '❌ Tests failed!'
+                    echo 'Tests failed!'
                 }
             }
         }
 
         stage('Code Quality') {
             steps {
-                echo '📊 Analyzing code quality...'
+                echo 'Analyzing code quality...'
+                // 运行代码验证（通常包含集成测试或静态分析）
                 sh './mvnw verify'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo '🚀 Deploying application...'
+                echo 'Deploying application (Local Simulation)...'
 
                 script {
-                    def remoteHost = 'username@XXX.XXX.XXX.XXX'
+                    def remoteHost = 'uaorus@172.26.59.129'
                     def deployPath = '/opt/deployments'
                     def jarFile = "${APP_NAME}-${APP_VERSION}.jar"
 
@@ -132,33 +139,33 @@ sleep 5
 
 # 验证进程是否在运行
 if ps -p \${APP_PID} > /dev/null 2>&1; then
-    echo "✅ Application process is running (PID: \${APP_PID})"
+    echo "Application process is running (PID: \${APP_PID})"
 
     # 检查日志中是否有错误
     if grep -i "error\\|exception\\|failed" app.log | tail -5; then
-        echo "⚠️ Found errors in logs, but application is running"
+        echo "Found errors in logs, but application is running"
     fi
 
-    echo "✅ Application started successfully"
+    echo "Application started successfully"
     exit 0
 else
-    echo "❌ Application process is not running"
+    echo "Application process is not running"
     echo "Last 30 lines of log:"
     tail -n 30 app.log || true
     exit 1
 fi
 ENDSSH
 
-                        echo '✅ Deployment completed'
+                        echo 'Deployment completed'
                     """
                 }
             }
             post {
                 success {
-                    echo '✅ Deployment completed successfully!'
+                    echo 'Deployment completed successfully!'
                 }
                 failure {
-                    echo '❌ Deployment failed!'
+                    echo 'Deployment failed!'
                 }
             }
         }
@@ -166,24 +173,25 @@ ENDSSH
 
     post {
         always {
-            echo '🧹 Cleaning up workspace...'
+            echo 'Cleaning up workspace...'
+            // 清理工作空间，节省磁盘空间
             cleanWs()
         }
         success {
-            echo '🎉 Pipeline completed successfully!'
+            echo 'Pipeline completed successfully!'
             // 可以添加通知，例如邮件或 Slack
-            // emailext subject: "✅ Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            // emailext subject: "Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
             //          body: "The build was successful.",
             //          to: "team@example.com"
         }
         failure {
-            echo '💥 Pipeline failed!'
-            // emailext subject: "❌ Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            echo 'Pipeline failed!'
+            // emailext subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
             //          body: "The build failed. Please check the logs.",
             //          to: "team@example.com"
         }
         unstable {
-            echo '⚠️ Pipeline is unstable!'
+            echo 'Pipeline is unstable!'
         }
     }
 }
