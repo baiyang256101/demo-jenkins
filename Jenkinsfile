@@ -98,17 +98,21 @@ pipeline {
 
                 script {
                     def remoteHost = 'uaorus@172.26.59.129'
-                    def deployPath = '/opt/deployments'
+                    // 改回 /home 目录，保证有权限写文件
+                    def deployPath = '/home/uaorus/deployments'
                     def jarFile = "${APP_NAME}-${APP_VERSION}.jar"
 
                     sh """
                         echo 'Deploying ${jarFile} to ${remoteHost}'
 
-                        # 上传 JAR 文件
-                        scp target/${jarFile} ${remoteHost}:${deployPath}/
+                        # 1. 务必先创建目录，否则 scp 会报错 "Failure"
+                        ssh -o StrictHostKeyChecking=no ${remoteHost} "mkdir -p ${deployPath}"
 
-                        # 远程部署
-                        ssh -T ${remoteHost} << 'ENDSSH'
+                        # 2. 上传 JAR 文件
+                        scp -o StrictHostKeyChecking=no target/${jarFile} ${remoteHost}:${deployPath}/
+
+                        # 3. 远程部署
+                        ssh -o StrictHostKeyChecking=no ${remoteHost} << 'ENDSSH'
 set -e
 
 DEPLOY_PATH="${deployPath}"
