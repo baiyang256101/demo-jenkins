@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统仪表盘 - Demo Jenkins</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+        }
+
+        h1 {
+            margin: 0;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(79, 70, 229, 0.4);
+        }
+
+        .card-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .card-icon {
+            float: right;
+            font-size: 1.5rem;
+            opacity: 0.5;
+        }
+
+        #refresh-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #refresh-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">← 返回主页</a>
+            <h1>System Dashboard</h1>
+            <button id="refresh-btn">刷新数据</button>
+        </header>
+
+        <div class="grid" id="stats-grid">
+            <div class="card">
+                <span class="card-icon">🕒</span>
+                <div class="card-label">Server Time</div>
+                <div class="card-value" id="serverTime">Loading...</div>
+            </div>
+            <div class="card">
+                <span class="card-icon">⏱️</span>
+                <div class="card-label">Uptime</div>
+                <div class="card-value" id="uptime">Loading...</div>
+            </div>
+            <div class="card">
+                <span class="card-icon">💻</span>
+                <div class="card-label">OS Environment</div>
+                <div class="card-value" id="os" style="font-size: 1rem;">Loading...</div>
+            </div>
+            <div class="card">
+                <span class="card-icon">☕</span>
+                <div class="card-label">Java Version</div>
+                <div class="card-value" id="javaVersion">Loading...</div>
+            </div>
+            <div class="card">
+                <span class="card-icon">🏷️</span>
+                <div class="card-label">App Version</div>
+                <div class="card-value" id="version">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/system/info');
+                const data = await response.json();
+
+                document.getElementById('serverTime').textContent = data.serverTime;
+                document.getElementById('uptime').textContent = data.uptime;
+                document.getElementById('os').textContent = data.os;
+                document.getElementById('javaVersion').textContent = data.javaVersion;
+                document.getElementById('version').textContent = data.version;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('stats-grid').innerHTML = '<p style="color:red">无法连接到服务器后端，请确保 API 正常运行。</p>';
+            }
+        }
+
+        document.getElementById('refresh-btn').addEventListener('click', fetchData);
+
+        // Initial load
+        fetchData();
+
+        // Auto refresh every 5 seconds
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+
+</html>
