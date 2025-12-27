@@ -1,5 +1,6 @@
 package com.baiyang.demojenkins.controller;
 
+import com.baiyang.demojenkins.service.MonitorService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,7 +14,12 @@ import java.util.Map;
 @RequestMapping("/api/system")
 public class SystemController {
 
+    private final MonitorService monitorService;
     private final long startTime = System.currentTimeMillis();
+
+    public SystemController(MonitorService monitorService) {
+        this.monitorService = monitorService;
+    }
 
     @GetMapping("/info")
     public Map<String, Object> getSystemInfo() {
@@ -29,6 +35,11 @@ public class SystemController {
         info.put("uptime", formatUptime(uptime));
         
         return info;
+    }
+
+    @GetMapping("/realtime")
+    public Map<String, Object> getRealtimeMetrics() {
+        return monitorService.getRealtimeMetrics();
     }
 
     private String formatUptime(long millis) {

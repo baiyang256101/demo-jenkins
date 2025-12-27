@@ -4,10 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统仪表盘 - Demo Jenkins</title>
+    <title>系统监控 - Demo Jenkins</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #4f46e5;
+            --primary-color: #6366f1;
+            --secondary-color: #ec4899;
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
@@ -16,14 +19,15 @@
 
         body {
             margin: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             padding: 2rem;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -31,9 +35,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 3rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 1rem;
+            margin-bottom: 2rem;
         }
 
         .back-link {
@@ -42,69 +44,133 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.9rem;
             transition: color 0.2s;
         }
 
         .back-link:hover {
-            color: var(--text-color);
+            color: white;
         }
 
         h1 {
             margin: 0;
-            background: linear-gradient(to right, #818cf8, #c084fc);
+            font-size: 1.8rem;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .grid {
+        /* 状态指示灯 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        .ping-dot {
+            width: 8px;
+            height: 8px;
+            background-color: currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 概览卡片 */
+        .grid-info {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
-        .card {
+        .card-mini {
             background: var(--card-bg);
+            padding: 1.25rem;
             border-radius: 12px;
-            padding: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(79, 70, 229, 0.4);
-        }
-
-        .card-label {
+        .label {
+            font-size: 0.85rem;
             color: var(--text-secondary);
-            font-size: 0.875rem;
             margin-bottom: 0.5rem;
         }
 
-        .card-value {
-            font-size: 1.5rem;
+        .value {
+            font-size: 1.25rem;
             font-weight: 600;
             color: white;
         }
 
-        .card-icon {
-            float: right;
-            font-size: 1.5rem;
-            opacity: 0.5;
+        .sub-value {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: auto;
+            padding-top: 0.5rem;
         }
 
-        #refresh-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: opacity 0.2s;
+        /* 图表区域 */
+        .grid-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
         }
 
-        #refresh-btn:hover {
-            opacity: 0.9;
+        @media (max-width: 900px) {
+            .grid-charts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: 350px;
+            position: relative;
+        }
+
+        .chart-title {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .live-value {
+            font-family: monospace;
+            color: var(--secondary-color);
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 280px !important;
         }
     </style>
 </head>
@@ -112,64 +178,158 @@
 <body>
     <div class="container">
         <header>
-            <a href="/" class="back-link">← 返回主页</a>
-            <h1>System Dashboard</h1>
-            <button id="refresh-btn">刷新数据</button>
+            <div>
+                <a href="/" class="back-link">← Back to Home</a>
+                <h1>J-Monitor Dashboard</h1>
+            </div>
+            <div class="status-indicator">
+                <div class="ping-dot"></div>
+                Live Connected
+            </div>
         </header>
 
-        <div class="grid" id="stats-grid">
-            <div class="card">
-                <span class="card-icon">🕒</span>
-                <div class="card-label">Server Time</div>
-                <div class="card-value" id="serverTime">Loading...</div>
+        <!-- 基础信息行 -->
+        <div class="grid-info">
+            <div class="card-mini">
+                <span class="label">Server Time</span>
+                <span class="value" id="serverTime">--:--:--</span>
             </div>
-            <div class="card">
-                <span class="card-icon">⏱️</span>
-                <div class="card-label">Uptime</div>
-                <div class="card-value" id="uptime">Loading...</div>
+            <div class="card-mini">
+                <span class="label">Uptime</span>
+                <span class="value" id="uptime">--:--:--</span>
             </div>
-            <div class="card">
-                <span class="card-icon">💻</span>
-                <div class="card-label">OS Environment</div>
-                <div class="card-value" id="os" style="font-size: 1rem;">Loading...</div>
+            <div class="card-mini">
+                <span class="label">OS / JDK</span>
+                <span class="value" id="os" style="font-size: 1rem;">Scanning...</span>
+                <span class="sub-value" id="javaVersion">Java --</span>
             </div>
-            <div class="card">
-                <span class="card-icon">☕</span>
-                <div class="card-label">Java Version</div>
-                <div class="card-value" id="javaVersion">Loading...</div>
+            <div class="card-mini">
+                <span class="label">CPU Cores</span>
+                <span class="value" id="cpuCores">--</span>
             </div>
-            <div class="card">
-                <span class="card-icon">🏷️</span>
-                <div class="card-label">App Version</div>
-                <div class="card-value" id="version">Loading...</div>
+        </div>
+
+        <!-- 图表行 -->
+        <div class="grid-charts">
+            <!-- CPU 图表 -->
+            <div class="chart-card">
+                <h3 class="chart-title">CPU Load <span class="live-value" id="val-cpu">0%</span></h3>
+                <canvas id="cpuChart"></canvas>
+            </div>
+            <!-- 内存 图表 -->
+            <div class="chart-card">
+                <h3 class="chart-title">Memory Usage <span class="live-value" id="val-mem">0%</span></h3>
+                <canvas id="memChart"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        async function fetchData() {
-            try {
-                const response = await fetch('/api/system/info');
-                const data = await response.json();
+        // 配置 Chart.js 全局字体颜色
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-                document.getElementById('serverTime').textContent = data.serverTime;
-                document.getElementById('uptime').textContent = data.uptime;
-                document.getElementById('os').textContent = data.os;
-                document.getElementById('javaVersion').textContent = data.javaVersion;
-                document.getElementById('version').textContent = data.version;
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('stats-grid').innerHTML = '<p style="color:red">无法连接到服务器后端，请确保 API 正常运行。</p>';
+        const maxDataPoints = 60; // 保留最近60个点（约2分钟）
+
+        // 初始化图表对象
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        const memCtx = document.getElementById('memChart').getContext('2d');
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 }, // 禁用动画以获得高性能实时更新
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { borderDash: [5, 5] } },
+                x: { display: false } // 隐藏X轴标签简化显示
+            },
+            elements: {
+                point: { radius: 0, hitRadius: 10 }, // 隐藏点，鼠标移上去才显示
+                line: { tension: 0.4 } // 平滑曲线
+            }
+        };
+
+        // CPU Chart
+        const cpuChart = new Chart(cpuCtx, {
+            type: 'line',
+            data: {
+                labels: Array(maxDataPoints).fill(''),
+                datasets: [{
+                    label: 'CPU (%)',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: commonOptions
+        });
+
+        // Memory Chart
+        const memChart = new Chart(memCtx, {
+            type: 'line',
+            data: {
+                labels: Array(maxDataPoints).fill(''),
+                datasets: [{
+                    label: 'Memory (%)',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: commonOptions
+        });
+
+        // 数据更新函数
+        async function updateDashboard() {
+            try {
+                // 并行请求基础信息和实时数据
+                const [infoRes, metricsRes] = await Promise.all([
+                    fetch('/api/system/info'),
+                    fetch('/api/system/realtime')
+                ]);
+
+                const info = await infoRes.json();
+                const metrics = await metricsRes.json();
+
+                // 更新基础信息
+                document.getElementById('serverTime').textContent = info.serverTime.split(' ')[1];
+                document.getElementById('uptime').textContent = info.uptime;
+                document.getElementById('os').textContent = info.os;
+                document.getElementById('javaVersion').textContent = `Java ${info.javaVersion}`;
+
+                // 更新数值显示
+                document.getElementById('cpuCores').textContent = metrics.cpuCores;
+                document.getElementById('val-cpu').textContent = metrics.cpuLoad + '%';
+                document.getElementById('val-mem').textContent = metrics.memoryUsageUnformatted.toFixed(1) + '%';
+
+                // 更新图表数据
+                updateChartData(cpuChart, metrics.cpuLoad);
+                updateChartData(memChart, metrics.memoryUsageUnformatted);
+
+            } catch (err) {
+                console.error("Fetch failed", err);
             }
         }
 
-        document.getElementById('refresh-btn').addEventListener('click', fetchData);
+        // 辅助函数：滑动窗口更新数据
+        function updateChartData(chart, newValue) {
+            const data = chart.data.datasets[0].data;
+            data.shift(); // 移除最左边的数据
+            data.push(newValue); // 添加最新的数据
+            chart.update();
+        }
 
-        // Initial load
-        fetchData();
-
-        // Auto refresh every 5 seconds
-        setInterval(fetchData, 5000);
+        // 启动定时器
+        setInterval(updateDashboard, 2000);
+        updateDashboard(); // 立即执行一次
     </script>
 </body>
 
