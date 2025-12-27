@@ -42,6 +42,11 @@ public class SystemController {
         return monitorService.getRealtimeMetrics();
     }
 
+    @GetMapping("/history")
+    public java.util.List<com.baiyang.demojenkins.entity.SystemMetric> getHistory() {
+        return monitorService.getHistory();
+    }
+
     private String formatUptime(long millis) {
         long seconds = millis / 1000;
         long minutes = seconds / 60;

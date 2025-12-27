@@ -62,4 +62,8 @@ public class MonitorService {
             repository.save(new SystemMetric(cpu, mem, memUsed));
         }
     }
+
+    public java.util.List<SystemMetric> getHistory() {
+        return repository.findTop100ByOrderByTimestampDesc();
+    }
 }
