@@ -141,12 +141,6 @@ sleep 5
 # 验证进程是否在运行
 if ps -p \${APP_PID} > /dev/null 2>&1; then
     echo "Application process is running (PID: \${APP_PID})"
-
-    # 检查日志中是否有错误 (加上 || true 防止 grep 没找到时导致脚本退出)
-    if grep -i "error\\|exception\\|failed" app.log | tail -5 || true; then
-        echo "Check log output above. If clean, ignore this."
-    fi
-
     echo "Application started successfully"
     exit 0
 else
