@@ -124,6 +124,8 @@ cd \${DEPLOY_PATH}
 
 # 停止旧应用
 echo "Stopping old application..."
+# 停止旧应用
+echo "Stopping old application..."
 # 使用 || true 确保即使没有进程也不会导致脚本失败
 pkill -f "\${JAR_FILE}" || true
 sleep 2
