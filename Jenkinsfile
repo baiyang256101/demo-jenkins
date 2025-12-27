@@ -132,7 +132,8 @@ sleep 1
 
 # 启动新应用
 echo "Starting application..."
-nohup java -jar \${JAR_FILE} > app.log 2>&1 &
+# 必须重定向 stdin (< /dev/null)，否则 SSH 可能会因为等待输入流关闭而导致退出码异常
+nohup java -jar \${JAR_FILE} > app.log 2>&1 < /dev/null &
 APP_PID=\$!
 
 echo "Application started with PID: \${APP_PID}"
@@ -141,6 +142,12 @@ sleep 5
 # 验证进程是否在运行
 if ps -p \${APP_PID} > /dev/null 2>&1; then
     echo "Application process is running (PID: \${APP_PID})"
+
+    # 恢复日志检查 (保留 || true 以防误杀)
+    if grep -i "error\\|exception\\|failed" app.log | tail -5 || true; then
+        echo "Check log output above. If clean, ignore this."
+    fi
+
     echo "Application started successfully"
     exit 0
 else
