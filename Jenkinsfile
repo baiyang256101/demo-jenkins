@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         MAVEN_OPTS = '-Xmx1024m'
-        APP_NAME = 'demo'
+        APP_NAME = 'demo-jenkins' // 修正：必须与 pom.xml 里的 artifactId 一致
         APP_VERSION = '0.0.1-SNAPSHOT'
     }
 
