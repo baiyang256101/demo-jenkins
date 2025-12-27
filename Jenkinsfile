@@ -114,6 +114,7 @@ pipeline {
                         # 3. 远程部署
                         ssh -o StrictHostKeyChecking=no ${remoteHost} << 'ENDSSH'
 set -e
+set -x  # 开启调试模式
 
 DEPLOY_PATH="${deployPath}"
 JAR_FILE="${jarFile}"
@@ -123,6 +124,7 @@ cd \${DEPLOY_PATH}
 
 # 停止旧应用
 echo "Stopping old application..."
+# 使用 || true 确保即使没有进程也不会导致脚本失败
 pkill -f "\${JAR_FILE}" || true
 sleep 2
 
@@ -143,9 +145,11 @@ sleep 5
 if ps -p \${APP_PID} > /dev/null 2>&1; then
     echo "Application process is running (PID: \${APP_PID})"
 
-    # 恢复日志检查 (保留 || true 以防误杀)
-    if grep -i "error\\|exception\\|failed" app.log | tail -5 || true; then
+    # 优化日志检查逻辑：先检测是否存在错误关键词
+    if grep -i -E "error|exception|failed" app.log > /dev/null 2>&1; then
         echo "Check log output above. If clean, ignore this."
+        # 显示匹配的行
+        grep -i -E "error|exception|failed" app.log | tail -n 5
     fi
 
     echo "Application started successfully"
