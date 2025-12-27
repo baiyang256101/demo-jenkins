@@ -49,11 +49,8 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building application...'
-                // 使用 Maven Wrapper 进行构建，跳过测试
-                sh '''
-                    chmod +x mvnw
-                    ./mvnw clean package -DskipTests
-                '''
+                // 使用 Jenkins 配置的 Maven 工具
+                sh 'mvn clean package -DskipTests'
             }
             post {
                 success {
@@ -71,7 +68,7 @@ pipeline {
             steps {
                 echo 'Running tests...'
                 // 运行单元测试
-                sh './mvnw test'
+                sh 'mvn test'
             }
             post {
                 always {
@@ -90,8 +87,8 @@ pipeline {
         stage('Code Quality') {
             steps {
                 echo 'Analyzing code quality...'
-                // 运行代码验证（通常包含集成测试或静态分析）
-                sh './mvnw verify'
+                // 运行代码验证
+                sh 'mvn verify'
             }
         }
 
